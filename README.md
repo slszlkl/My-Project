@@ -1,2 +1,2 @@
 # My-Project
-It has not finshed yet.
+It is not finshed yet.
