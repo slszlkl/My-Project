@@ -32,9 +32,4 @@
       <Filter>资源文件</Filter>
     </Library>
   </ItemGroup>
-  <ItemGroup>
-    <None Include="miracl.pdb">
-      <Filter>资源文件</Filter>
-    </None>
-  </ItemGroup>
 </Project>

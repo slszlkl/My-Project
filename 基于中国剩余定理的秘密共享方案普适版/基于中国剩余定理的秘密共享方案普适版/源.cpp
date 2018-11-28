@@ -15,19 +15,19 @@ extern "C"
 using namespace std;
 
 
-void BigArrayTwotoOne(big ki[], big di[], big keyd[], int t, int keynumber[]) {
+void BigArrayTwotoOne(big ki[], big di[], big kd[], int t, int keynumber[]) {
 	for (int i = 0; i < t; i++) //两个大数数组合并为一个，ki在前，di在后适配解方程函数
 	{
-		keyd[i] = mirvar(0);
-		keyd[i + t] = mirvar(0);
+		kd[i] = mirvar(0);
+		kd[i + t] = mirvar(0);
 		int tmp = keynumber[i];
-		copy(ki[tmp], keyd[i]);
-		copy(di[tmp], keyd[i + t]);
+		copy(ki[tmp], kd[i]);
+		copy(di[tmp], kd[i + t]);
 	}
 }
 
-
-void BigArrayAdds(big a[], big sum ,int n) {
+////////////////////////////////////////////////////////////////////////////////////////////////
+void BigArrayAdds(big a[], big sum ,int n) { //大数数组连加
 	add(a[0], a[1], sum);										
 	for (int i = 0; i < n - 2; i++)
 	{
@@ -35,16 +35,16 @@ void BigArrayAdds(big a[], big sum ,int n) {
 	}
 }
 
-
-void BigArrayMutlipies(big a[], big M/*result*/, int n) {
+////////////////////////////////////////////////////////////////////////////////////////////////
+void BigArrayMutlipies(big a[], big M/*result*/, int n) {  //大数数组连乘
 	multiply(a[0], a[1], M);
 	for (int r = 0; r < n - 2; r++) {
 		multiply(M, a[r+2], M);								
 	}
 }
 
-
-int congruent_equation(big am[], big result, int t) {
+////////////////////////////////////////////////////////////////////////////////////////////////
+int congruent_equation(big am[], big result, int t) { //中国剩余定理解同余方程组
 	big con = mirvar(1);
 	big z = mirvar(0);
 	int Size = t;
@@ -63,15 +63,12 @@ int congruent_equation(big am[], big result, int t) {
 	big monij[t_Max];												//Mj^-1
 	big Mj[t_Max];													//Mj=m/mi
 	big xj[t_Max];													//xj=Mj*Mj^-1*ai mod m
-
+	big Mtmp = mirvar(0);
 	BigArrayMutlipies(&am[Size], M, Size);
-
 	for (int i = 0; i < Size; i++) {
 		Mj[i] = mirvar(0);
 		monij[i] = mirvar(0);
 		xj[i] = mirvar(0);
-
-		big Mtmp = mirvar(0);
 		copy(M, Mtmp);
 		divide(Mtmp, am[Size + i], Mj[i]);							//Mj=m/mj
 		xgcd(Mj[i], am[i + Size], monij[i], monij[i], monij[i]);		//monij=Mj^-1=Mj^-1 mod mi		
@@ -79,7 +76,6 @@ int congruent_equation(big am[], big result, int t) {
 		multiply(xj[i], monij[i], xj[i]);							//xj[i] = mj*mj^-1*aj		               
 		divide(xj[i], M, M);										//xj=xj mod M
 	}
-
 	BigArrayAdds(xj, result, Size);
 	BOOL sign = divisible(result,M);
 	divide(result, M, M);											//result取模
@@ -88,13 +84,13 @@ int congruent_equation(big am[], big result, int t) {
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 
-int encode(big ki[], big di[], int t, int n, big k/*已知明文*/, big N, big M) {
+int encode(big ki[], big di[], int t, int n, big k/*已知明文*/, big N, big M) { //加密函数
 	big tmp = mirvar(0);
 	big con = mirvar(1);
 	char uselessstring[9999] = { '\0' };
 	int klen = cotstr(k, uselessstring);
 	int klen_devide_n = klen / t;
-	if (klen%t != 0) klen_devide_n = +1;
+	if (klen%t != 0) klen_devide_n += 1;
 	irand((unsigned)time(0));
 	for (int i = 0; i < n; i++) {     //选定不同位数的素数来满足条件
 LOOP1:
@@ -113,8 +109,8 @@ LOOP1:
 	return 0;
 }
 
-
-int normaldecode(big ki[], big di[], big k_, int keymuch) {
+/////////////////////////////////////////////////////////////////////////////////////////////
+int decode(big ki[], big di[], big k_, int keymuch) {    //解密
 	int keynumber[n_Max];
 	for (int i = 0; i < keymuch; i++)
 	{
@@ -122,12 +118,13 @@ int normaldecode(big ki[], big di[], big k_, int keymuch) {
 	}
 	big kianddiinuse[2 * t_Max];
 	BigArrayTwotoOne(ki, di, kianddiinuse, keymuch, keynumber);
-	congruent_equation(kianddiinuse, k_, keymuch);
-	return 0;
+	if (congruent_equation(kianddiinuse, k_, keymuch) == 0)
+		return 0;
+	else return -1;
 }
 
-
-int autodecode(big k_, big di[], big ki[], int t, int n) {
+//////////////////////////////////////////////////////////////////////////////////////////
+int decodeauto(big k_, big di[], big ki[], int t, int n) {   //全自动模式下的解密
 	int keynumber[t_Max];
 	for (int i = 0; i < t; i++) {  //选定拿t组密钥用于解秘
 LOOP2:
@@ -140,12 +137,13 @@ LOOP2:
 
 	big kianddiinuse[2*t_Max];
 	BigArrayTwotoOne(ki, di, kianddiinuse, t, keynumber);
-	congruent_equation(kianddiinuse, k_, t);
-	return 0;
+	if (congruent_equation(kianddiinuse, k_, t) == 0)
+		return 0;
+	else return -1;
 }
 
-
-int everyauto(int t, int n) {
+////////////////////////////////////////////////////////////////////////////////////////////////
+int everyauto(int t, int n) {  //全自动模式，以完成作业并做用户演示用，不生成文件
 	miracl *mip = mirsys(10000, 10);
 	big N = mirvar(0);
 	big M = mirvar(0);
@@ -156,7 +154,7 @@ int everyauto(int t, int n) {
 	cotnum(k, stdout);
 	big di[n_Max];
 	big ki[n_Max];
-	for (int i = 0; i < n; i++)
+	for (int i = 0; i < n_Max; i++)
 	{
 		ki[i] = mirvar(0);
 		di[i] = mirvar(0);
@@ -177,7 +175,10 @@ int everyauto(int t, int n) {
 	cotnum(M, stdout);
 	cout << endl;
 	big k_ = mirvar(0); //密文
-	autodecode(k_, di, ki, t, n);
+	if (decodeauto(k_, di, ki, t, n) == -1) {
+		cout << "解密过程失败！" << endl;
+		return -1;
+	}
 	cout << "解密后的结果为:";
 	cotnum(k_, stdout);
 	cout << endl;
@@ -193,58 +194,161 @@ int everyauto(int t, int n) {
 	}
 }
 
-
-int onlyencodefile(FILE *fp, int t, int n) {
+//////////////////////////////////////////////////////////////////////////////////////////////////
+int fileencode(int t, int n) {  //对存有一个大数的文件进行加密并输入n个密文文件
 	miracl *mip = mirsys(10000, 10);
-	big plaintext = mirvar(0);
-	cinnum(plaintext, fp);
-	char   ciphertext[20][200] = { '\0' };
+	char plaintextfile[200];
+	cout << "输入明文文件（.txt格式）完整路径:";
+	cin >> plaintextfile;
+	cout << endl;
+	char houzhui[] = ".txt";
+	char *locate = strstr(plaintextfile, houzhui);
+	if (locate == NULL) {
+		cout << "文件格式错误!" << endl;
+		mirexit();
+		return -1;
+	}
+	FILE *fp;
+	fp = fopen(plaintextfile, "r");
+	if(fp==NULL) {
+		cout << "文件输入发生错误！" << endl;
+		mirexit();
+		return -1;
+	};
+	big plaintextnum = mirvar(0);
+	cinnum(plaintextnum, fp);
+	fclose(fp);
+	////////////////////明文文件处理完毕
+	 //预备输出到原始文件路径
+	int houzhuilocate = locate - plaintextfile; 
+	char cipherfileend[] = "_ciphertext01.txt";
+	char ciphertextfile[200] = { '\0' };
+	strncpy(ciphertextfile, plaintextfile, houzhuilocate);
+	strcat(ciphertextfile, cipherfileend);
+	cout << "加密中，请稍等..." << endl;
+	//输出的第一个文件名确定，开始做计算
+	big N = mirvar(0);
+	big M = mirvar(0);
+	big ki[n_Max];
+	big di[n_Max];
+	for (int i = 0; i < n_Max; i++)
+	{
+		ki[i] = mirvar(0);
+		di[i] = mirvar(0);
+	}
+	encode(ki, di, t, n, plaintextnum, N, M);
+	FILE *password[n_Max] = { NULL };
 
+	for (int i = 0; i < n; i++)
+	{
+		ciphertextfile[houzhuilocate+11] = (i + 1) / 10 + '0';
+		ciphertextfile[houzhuilocate+12] = i % 10 + 1 + '0';
+		password[i] = fopen(ciphertextfile, "w+");
+		cotnum(ki[i], stdout);
+		cotnum(di[i], stdout);
+		cotnum(ki[i], password[i]);
+		_fputchar('\n');
+		cotnum(di[i], password[i]);
+		fclose(password[i]);
+	}
+	mirexit();
+	return 0;
 }
 
+/////////////////////////////////////////////////////////////////////////////////////////////////
+int filedecode(char password[][200], int n ) {
+	miracl *mp = mirsys(10000, 10);
+	big ki[n_Max];
+	big di[n_Max];
+	big plaintextnum = mirvar(0);
+	char plaintextfilename[] = "./plaintext.txt";
+	for (int i = 0; i < n; i++)
+	{
+		FILE* cihperfp = fopen(password[i], "r");
+		if (cihperfp == NULL) {
+			cout << "文件" << password[i] << "打开失败!";
+			mirexit();
+			return -1;
+		}
+		ki[i] = mirvar(0);
+		di[i] = mirvar(0);
+		cinnum(ki[i], cihperfp);
+		cinnum(di[i], cihperfp);
+		fclose(cihperfp);
+	}
+	//cout << "请输入输出文件：" << endl;
+	if (decode(ki, di, plaintextnum, n) == -1) {
+		cout << "解密过程出现错误！" << endl;
+		mirexit();
+		return -1;
+	}
+	FILE *plaintextfp = fopen(plaintextfilename, "w+");
+	cotnum(plaintextnum, plaintextfp);
+	fclose(plaintextfp);
+	cout << "文件解密成功！如结果不符合预期，请检查密文文件输入数量是否足够" << endl;
+	mirexit();
+	return 0;
+}
 
+//////////////////////////////////////////////////////////////////////////////////////////////////
 int main() {
 	int sign;
 	cout << "请选择程序运行模式，";
 	cout << "1：自动，2：从文件加密并输入密文到文件";
 	cout << " 3：从文件解密并输出解密结果到文件" << endl;
 	cin >> sign;
-	if (sign != 1 && sign != 2 && sign != 3) {
-		cout << "erro:非法输入！" << endl;
-		system("pause");
-		return -1;
-	}
-	else if (sign == 1) {
+	if (sign == 1) {
 		int t = 3, n = 5;
 		everyauto(t, n);
 		system("pause");
 		return 0;
 	}
 	else if (sign == 2) {
-		char plaintextfile[200];
-		cout << "输入文件完整路径:";
-		cin >> plaintextfile;
+		int t, n;
+		cout << "请输入加密门限t和n,";
+		cout << "t范围不大于" << t_Max;
+		cout << ",n范围不大于" << n_Max;
+		cout << ":";
+		cin >> t >> n;
 		cout << endl;
-		FILE *fp;
-		fp = fopen(plaintextfile, "r+");
-		if (fp != NULL) {
-			int t, n;
-			cout << "请输入加密门限t和n:";
-			cin >> t >> n;
-			cout << endl;
-			if (t > t_Max || n > n_Max) {
-				cout << "t或n输入过大!" << endl;
-				return -1;
-			}
-			onlyencodefile(fp, t, n);
-		} 
-		else {
-			cout << "文件输入发生错误！" << endl;
+		if (t > t_Max || n > n_Max) {
+			cout << "t或n输入过大!" << endl;
+			return -1;
+		}
+		else if (t > n) {
+			cout << "错误!t输入不能大于n" << endl;
+		}
+		int tmp = fileencode(t, n);
+		if (tmp == 0) {
+			cout << "加密成功！" << endl;
+			cout << "该文件若要解密，须同时输入" << t;
+			cout << "个密文文件。" << endl;
+		}
+		system("pause");
+		return 0;
+	}
+	else if (sign == 3) {
+		char ciphertextfile[n_Max][200] = { '\0' };
+		char InputOrNot[] = "yes";
+		/*char forcompare[] = ".txt";
+		char tmp[200];*/
+		int n;   //计数输入文件数
+		for (n = 0; InputOrNot[0] == 'Y'||InputOrNot[0] == 'y'; ++n) {
+			cout << "请输入密文文件:" << endl;
+			cin >> ciphertextfile[n];
+			cout << "是否继续输入文件?(y/n）" << endl;
+			cin >> InputOrNot[0];
+		}
+		if (filedecode(ciphertextfile, n) == -1) {
 			system("pause");
 			return -1;
 		}
-		fclose(fp);
 		system("pause");
 		return 0;
+	}
+	else {
+		cout << "erro:非法输入！" << endl;
+		system("pause");
+		return -1;
 	}
 }
